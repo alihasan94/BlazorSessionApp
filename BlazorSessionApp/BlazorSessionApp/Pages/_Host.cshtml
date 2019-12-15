@@ -1,0 +1,92 @@
+﻿@page "/"
+@namespace BlazorSessionApp.Pages
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@{
+    Layout = null;
+}
+@using Helpers
+@using Microsoft.AspNetCore.Http
+
+@inject SessionState session
+@inject IHttpContextAccessor accessor
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BlazorSessionApp</title>
+    <base href="~/" />
+    <link rel="stylesheet" href="css/bootstrap/bootstrap.min.css" />
+    <link href="css/site.css" rel="stylesheet" />
+</head>
+<body>
+    
+    @{
+        //Singleton Item: services.AddSingleton<SessionState>(); in Startup.cs
+
+        //Code to save data in server side session
+
+        //If session already has data
+        string Username = accessor.HttpContext.Session.GetString("Username");
+        string Password  = accessor.HttpContext.Session.GetString("Password");
+
+        //If server session is null
+        if (session.Items.ContainsKey("Username") && Username == null)
+        {
+            //get from singleton item
+            Username = session.Items["Username"]?.ToString();
+            // save to server side session
+            accessor.HttpContext.Session.SetString("Username", Username);
+            //remove from singleton Item
+            session.Items.Remove("Username");
+        }
+
+        if (session.Items.ContainsKey("Password") && Password == null)
+        {
+            Password = session.Items["Password"].ToString();
+            accessor.HttpContext.Session.SetString("Password", Password);
+            session.Items.Remove("Password");
+        }
+
+        //If Session is not expired yet then  navigate to home
+        if (!string.IsNullOrEmpty(Username) && !string.IsNullOrEmpty(Password) && accessor.HttpContext.Request.Path == "/")
+        {
+            accessor.HttpContext.Response.Redirect("/home");
+        }
+        //If Session is expired then navigate to login
+        else if (string.IsNullOrEmpty(Username) && string.IsNullOrEmpty(Password) && accessor.HttpContext.Request.Path != "/")
+        {
+            accessor.HttpContext.Response.Redirect("/");
+        }
+
+    }
+    <app>
+        <component type="typeof(App)" render-mode="ServerPrerendered" />
+    </app>
+
+    <div id="blazor-error-ui">
+        <environment include="Staging,Production">
+            An error has occurred. This application may no longer respond until reloaded.
+        </environment>
+        <environment include="Development">
+            An unhandled exception has occurred. See browser dev tools for details.
+        </environment>
+        <a href="" class="reload">Reload</a>
+        <a class="dismiss">🗙</a>
+    </div>
+
+    <script src="_framework/blazor.server.js"></script>
+    <script src="_content/Microsoft.AspNetCore.ProtectedBrowserStorage/protectedBrowserStorage.js"></script>
+    <script>
+        // use this to redirect from "Login Page" only in order to save the state on server side session
+        // because blazor's NavigateTo() won't refresh the page. The function below refresh 
+        // the page and runs above code to save data in server side session.
+        window.clientJsMethods = {
+          RedirectTo: function (path) {
+                window.location = path;
+            }
+        };
+    </script>
+</body>
+</html>

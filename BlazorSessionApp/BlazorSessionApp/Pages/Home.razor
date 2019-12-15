@@ -1,0 +1,35 @@
+﻿@page "/home"
+
+@using Helpers
+@using Microsoft.AspNetCore.Http
+
+@inject SessionState session
+@inject IHttpContextAccessor accessor
+<h1>Home</h1>
+
+<p>You have logged In: </p>
+
+<label class="col-md-12"><span>Username: </span>@Username</label>
+<label class="col-md-12"><span>Password: </span>@Password</label>
+
+@code {
+
+    public string Username { get; set; }
+    public string Password { get; set; }
+
+}
+
+@functions {
+
+    private async Task GetSession()
+    {
+        Username = accessor.HttpContext.Session.GetString("Username");
+        Password = accessor.HttpContext.Session.GetString("Password");
+        await InvokeAsync(()=> StateHasChanged());
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await GetSession();
+    }
+}
